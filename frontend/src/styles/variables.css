@@ -1,0 +1,83 @@
+:root {
+  /* ===== CORES PRINCIPAIS ===== */
+  --color-primary: rgb(43, 93, 250);
+  --color-primary-hover: rgb(35, 78, 215);
+  --color-accent: rgb(14, 133, 253);
+  --color-accent-hover: rgb(12, 115, 220);
+  --color-bg: #FFFFFF;
+  --color-text: #1F1F1F;
+  --color-text-secondary: #555555;
+  --color-border: #E5E7EB;
+  --color-bg-light: #F9FAFB;
+
+  /* ===== CORES AUXILIARES ===== */
+  --color-error: rgb(229, 115, 115);
+  --color-error-bg: rgba(229, 115, 115, 0.1);
+  --color-success: rgb(76, 175, 80);
+  --color-success-bg: rgba(76, 175, 80, 0.1);
+  --color-warning: rgb(255, 193, 7);
+  --color-warning-bg: rgba(255, 193, 7, 0.1);
+  --color-info: rgb(14, 133, 253);
+  --color-info-bg: rgba(14, 133, 253, 0.1);
+
+  /* ===== TIPOGRAFIA ===== */
+  --font-heading: 'Inter', sans-serif;
+  --font-body: 'Open Sans', sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-size-h1: 32px;
+  --font-size-h2: 24px;
+  --font-size-h3: 20px;
+  --font-size-body: 16px;
+  --font-size-small: 14px;
+  --font-size-xs: 12px;
+
+  --line-height-heading: 1.2;
+  --line-height-body: 1.6;
+
+  /* ===== ESPAÇAMENTOS ===== */
+  --spacing-section: 80px;
+  --spacing-section-lg: 96px;
+  --spacing-card: 24px;
+  --spacing-card-lg: 32px;
+  --spacing-mobile: 16px;
+  --spacing-inner: 10px;
+
+  /* ===== BOTÕES ===== */
+  --radius-button: 5px;
+  --transition-button: 0.2s ease;
+
+  /* ===== CARDS ===== */
+  --radius-card: 10px;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+  /* ===== NAVBAR ===== */
+  --navbar-height: 72px;
+
+  /* ===== FOOTER ===== */
+  --footer-bg: #111827;
+  --footer-padding: 24px;
+  --footer-text: #D1D5DB;
+
+  /* ===== CONTAINER ===== */
+  --container-width: 1200px;
+  --container-reading: 720px;
+
+  /* ===== GRID ===== */
+  --grid-gutter: 24px;
+  --grid-gutter-tablet: 20px;
+  --grid-gutter-mobile: 16px;
+
+  /* ===== BREAKPOINTS ===== */
+  --bp-desktop: 1200px;
+  --bp-tablet: 768px;
+  --bp-mobile: 480px;
+
+  /* ===== FOCUS ===== */
+  --focus-color: rgb(14, 133, 253);
+  --focus-shadow: 0 0 5px rgba(14, 133, 253, 0.5);
+}
