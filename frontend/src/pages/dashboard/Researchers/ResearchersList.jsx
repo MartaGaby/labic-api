@@ -1,16 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiPlus, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { researchersService } from '../../../services/researchersService'; // Importando o serviço
 
 export default function ResearchersList() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [researchers] = useState([
-    { id: 1, name: 'Dr. Carlos Silva', email: 'carlos.silva@labic.edu', area: 'Inteligência Artificial', status: 'Ativo' },
-    { id: 2, name: 'Ma. Júlia Gomes', email: 'julia.gomes@labic.edu', area: 'Prototipagem Rápida', status: 'Em Execução' },
-    { id: 3, name: 'Dr. Ana Silva', email: 'ana.silva@labic.edu', area: 'Sistemas Emergentes', status: 'Concluído' }
-  ]);
+  // Estados para gerenciar os dados da API simulada
+  const [researchers, setResearchers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Busca inicial dos dados
+  useEffect(() => {
+    const fetchResearchers = async () => {
+      try {
+        const data = await researchersService.getAll();
+        // Caso a API não traga um 'status' padrão, podemos forçar 'Ativo' para manter a UI consistente
+        const formattedData = data.map(res => ({
+          ...res,
+          status: res.status || 'Ativo'
+        }));
+        setResearchers(formattedData);
+      } catch (error) {
+        console.error("Erro ao buscar pesquisadores:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResearchers();
+  }, []);
+
+  // Função para deletar um pesquisador com confirmação
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este pesquisador da equipe?')) {
+      try {
+        await researchersService.delete(id);
+        setResearchers(prev => prev.filter(res => res.id !== id));
+      } catch (error) {
+        console.error("Erro ao deletar o pesquisador:", error);
+      }
+    }
+  };
 
   const filteredResearchers = researchers.filter(r =>
     r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,26 +84,42 @@ export default function ResearchersList() {
             </tr>
           </thead>
           <tbody>
-            {filteredResearchers.map((res) => (
-              <tr key={res.id} style={styles.tbodyRow}>
-                <td style={styles.tdName}>{res.name}</td>
-                <td style={styles.td}>{res.email}</td>
-                <td style={styles.td}>{res.area}</td>
-                <td style={styles.td}>
-                  <span style={{
-                    ...styles.badge,
-                    ...styles[res.status === 'Ativo' ? 'badgeActive' : res.status === 'Em Execução' ? 'badgeProgress' : 'badgeDone']
-                  }}>
-                    {res.status}
-                  </span>
-                </td>
-                <td style={styles.tdActions}>
-                  <button style={styles.actionBtn} title="Visualizar"><FiEye size={16} color="#4B5563" /></button>
-                  <button style={styles.actionBtn} title="Editar"><FiEdit2 size={16} color="#2B5DFA" /></button>
-                  <button style={styles.actionBtn} title="Excluir"><FiTrash2 size={16} color="#E57373" /></button>
-                </td>
+            {isLoading ? (
+              <tr style={styles.tbodyRow}>
+                <td colSpan="5" style={styles.loadingText}>Carregando pesquisadores...</td>
               </tr>
-            ))}
+            ) : filteredResearchers.length > 0 ? (
+              filteredResearchers.map((res) => (
+                <tr key={res.id} style={styles.tbodyRow}>
+                  <td style={styles.tdName}>{res.name}</td>
+                  <td style={styles.td}>{res.email}</td>
+                  <td style={styles.td}>{res.area}</td>
+                  <td style={styles.td}>
+                    <span style={{
+                      ...styles.badge,
+                      ...styles[res.status === 'Ativo' ? 'badgeActive' : res.status === 'Em Execução' ? 'badgeProgress' : 'badgeDone']
+                    }}>
+                      {res.status}
+                    </span>
+                  </td>
+                  <td style={styles.tdActions}>
+                    <button style={styles.actionBtn} title="Visualizar"><FiEye size={16} color="#4B5563" /></button>
+                    <button style={styles.actionBtn} title="Editar"><FiEdit2 size={16} color="#2B5DFA" /></button>
+                    <button 
+                      style={styles.actionBtn} 
+                      title="Excluir"
+                      onClick={() => handleDelete(res.id)}
+                    >
+                      <FiTrash2 size={16} color="#E57373" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr style={styles.tbodyRow}>
+                <td colSpan="5" style={styles.emptyText}>Nenhum pesquisador encontrado.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -103,4 +151,6 @@ const styles = {
   badgeActive: { backgroundColor: '#DEF7EC', color: 'rgb(76,175,80)' },
   badgeProgress: { backgroundColor: '#FEF3C7', color: 'rgb(255,193,7)' },
   badgeDone: { backgroundColor: '#E0E7FF', color: 'rgb(43, 93, 250)' },
+  loadingText: { padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '14px', fontStyle: 'italic' },
+  emptyText: { padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }
 };

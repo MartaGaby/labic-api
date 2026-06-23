@@ -1,19 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiPlus, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { articlesService } from '../../../services/articlesService';
 
 export default function ArticlesList() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Estados para gerenciar os dados da API simulada
+  const [articles, setArticles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true); // Já começa carregando
 
-  // Mock baseado exatamente nos dados visíveis em listagem_2.jpeg
-  const [articles] = useState([
-    { id: 1, title: 'ApplyFlow AI: Otimização de Candidaturas', authors: 'A. M. Silva, J. S. Gouveia', date: '15 Mai 2026', status: 'Ativo' },
-    { id: 2, title: 'Prototipagem AI: Otimização Rápida', authors: 'A. M. Silva, J. S. Gouveia', date: '15 Mai 2026', status: 'Em Execução' },
-    { id: 3, title: 'Smart 3D: Otimização Controller ativos', authors: 'A. M. Silva, J. S. Gouveia', date: '15 Mai 2026', status: 'Em Execução' },
-    { id: 4, title: 'Sistemas & Tecnologias Emergentes', authors: 'A. M. Silva, J. S. Gouveia', date: '15 Mai 2026', status: 'Concluído' },
-    { id: 5, title: 'Educational VR Platform', authors: 'A. M. Silva, J. S. Gouveia', date: '15 Mai 2026', status: 'Concluído' }
-  ]);
+  // Função e chamada agrupadas no ciclo de vida correto (resolve o erro do ESLint)
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const data = await articlesService.getAll();
+        setArticles(data);
+      } catch (error) {
+        console.error("Erro ao buscar artigos:", error);
+      } finally {
+        setIsLoading(false); // Atualização assíncrona após a promessa resolver
+      }
+    };
+
+    fetchArticles();
+  }, []);
+
+  // Função para deletar um artigo com confirmação
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este artigo?')) {
+      try {
+        await articlesService.delete(id);
+        setArticles(prev => prev.filter(art => art.id !== id));
+      } catch (error) {
+        console.error("Erro ao deletar o artigo:", error);
+      }
+    }
+  };
 
   const filteredArticles = articles.filter(art =>
     art.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,26 +79,42 @@ export default function ArticlesList() {
             </tr>
           </thead>
           <tbody>
-            {filteredArticles.map((art) => (
-              <tr key={art.id} style={styles.tbodyRow}>
-                <td style={styles.tdName}>{art.title}</td>
-                <td style={styles.td}>{art.authors}</td>
-                <td style={styles.td}>{art.date}</td>
-                <td style={styles.td}>
-                  <span style={{
-                    ...styles.badge,
-                    ...styles[art.status === 'Ativo' ? 'badgeActive' : art.status === 'Em Execução' ? 'badgeProgress' : 'badgeDone']
-                  }}>
-                    {art.status}
-                  </span>
-                </td>
-                <td style={styles.tdActions}>
-                  <button style={styles.actionBtn} title="Visualizar"><FiEye size={16} color="#4B5563" /></button>
-                  <button style={styles.actionBtn} title="Editar"><FiEdit2 size={16} color="#2B5DFA" /></button>
-                  <button style={styles.actionBtn} title="Excluir"><FiTrash2 size={16} color="#E57373" /></button>
-                </td>
+            {isLoading ? (
+              <tr style={styles.tbodyRow}>
+                <td colSpan="5" style={styles.loadingText}>Carregando artigos...</td>
               </tr>
-            ))}
+            ) : filteredArticles.length > 0 ? (
+              filteredArticles.map((art) => (
+                <tr key={art.id} style={styles.tbodyRow}>
+                  <td style={styles.tdName}>{art.title}</td>
+                  <td style={styles.td}>{art.authors}</td>
+                  <td style={styles.td}>{art.date}</td>
+                  <td style={styles.td}>
+                    <span style={{
+                      ...styles.badge,
+                      ...styles[art.status === 'Ativo' ? 'badgeActive' : art.status === 'Em Execução' ? 'badgeProgress' : 'badgeDone']
+                    }}>
+                      {art.status}
+                    </span>
+                  </td>
+                  <td style={styles.tdActions}>
+                    <button style={styles.actionBtn} title="Visualizar"><FiEye size={16} color="#4B5563" /></button>
+                    <button style={styles.actionBtn} title="Editar"><FiEdit2 size={16} color="#2B5DFA" /></button>
+                    <button 
+                      style={styles.actionBtn} 
+                      title="Excluir" 
+                      onClick={() => handleDelete(art.id)}
+                    >
+                      <FiTrash2 size={16} color="#E57373" />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr style={styles.tbodyRow}>
+                <td colSpan="5" style={styles.emptyText}>Nenhum artigo encontrado.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -106,4 +146,6 @@ const styles = {
   badgeActive: { backgroundColor: '#DEF7EC', color: 'rgb(76,175,80)' },
   badgeProgress: { backgroundColor: '#FEF3C7', color: 'rgb(255,193,7)' },
   badgeDone: { backgroundColor: '#E0E7FF', color: 'rgb(43, 93, 250)' },
+  loadingText: { padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '14px', fontStyle: 'italic' },
+  emptyText: { padding: '24px', textAlign: 'center', color: '#6B7280', fontSize: '14px' }
 };
