@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiAlertCircle } from 'react-icons/fi';
+import { researchersService } from '../../../services/researchersService'; // Importação do serviço
 
 export default function ResearcherCreate() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export default function ResearcherCreate() {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoName, setPhotoName] = useState('');
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false); // Estado de travamento
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,15 +78,29 @@ export default function ResearcherCreate() {
     return Object.keys(currentErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    console.log('Salvando pesquisador validado:', { ...formData, photoFile });
-    navigate('/dashboard/pesquisadores');
+    setIsSubmitting(true);
+
+    try {
+      const researcherData = {
+        ...formData,
+        // Em uma API real, você enviaria photoFile via FormData
+      };
+
+      await researchersService.create(researcherData);
+      navigate('/dashboard/pesquisadores');
+    } catch (error) {
+      console.error("Erro na requisição:", error);
+      setErrors(prev => ({ ...prev, submit: 'Erro ao comunicar com o servidor.' }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,6 +112,14 @@ export default function ResearcherCreate() {
         <hr style={styles.divider} />
 
         <form onSubmit={handleSubmit} style={styles.form} noValidate>
+          
+          {/* Alerta de erro global */}
+          {errors.submit && (
+            <div style={styles.globalError}>
+              <FiAlertCircle /> {errors.submit}
+            </div>
+          )}
+
           {/* Nome Completo */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Nome completo</label>
@@ -106,6 +130,7 @@ export default function ResearcherCreate() {
               style={{ ...styles.input, borderColor: errors.name ? '#E57373' : '#E5E7EB' }}
               value={formData.name}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
             {errors.name && <span style={styles.errorText}><FiAlertCircle /> {errors.name}</span>}
           </div>
@@ -120,6 +145,7 @@ export default function ResearcherCreate() {
               style={{ ...styles.input, borderColor: errors.email ? '#E57373' : '#E5E7EB' }}
               value={formData.email}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
             {errors.email && <span style={styles.errorText}><FiAlertCircle /> {errors.email}</span>}
           </div>
@@ -134,6 +160,7 @@ export default function ResearcherCreate() {
               style={{ ...styles.input, borderColor: errors.area ? '#E57373' : '#E5E7EB' }}
               value={formData.area}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
             {errors.area && <span style={styles.errorText}><FiAlertCircle /> {errors.area}</span>}
           </div>
@@ -148,6 +175,7 @@ export default function ResearcherCreate() {
               value={formData.bio}
               onChange={handleChange}
               rows={4}
+              disabled={isSubmitting}
             />
             {errors.bio && <span style={styles.errorText}><FiAlertCircle /> {errors.bio}</span>}
           </div>
@@ -155,15 +183,18 @@ export default function ResearcherCreate() {
           {/* Foto (Upload) */}
           <div style={styles.inputGroup}>
             <label style={styles.label}>Foto</label>
-            <div style={{ ...styles.fileContainer, borderColor: errors.photo ? '#E57373' : '#E5E7EB' }}>
+            <div style={{ ...styles.fileContainer, borderColor: errors.photo ? '#E57373' : '#E5E7EB', backgroundColor: isSubmitting ? '#F9FAFB' : '#FFFFFF' }}>
               <input 
                 type="file" 
                 id="file-upload" 
                 accept="image/*"
                 style={styles.fileInput} 
                 onChange={handleFileChange}
+                disabled={isSubmitting}
               />
-              <label htmlFor="file-upload" style={styles.fileBtn}>Selecionar arquivo</label>
+              <label htmlFor="file-upload" style={{ ...styles.fileBtn, pointerEvents: isSubmitting ? 'none' : 'auto', color: isSubmitting ? '#9CA3AF' : '#1F1F1F' }}>
+                Selecionar arquivo
+              </label>
               <span style={{ ...styles.fileInstructions, color: photoName ? '#1F1F1F' : '#6B7280' }}>
                 {photoName ? photoName : 'Nenhum arquivo selecionado'}
               </span>
@@ -181,6 +212,7 @@ export default function ResearcherCreate() {
               style={styles.input}
               value={formData.link}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -188,13 +220,18 @@ export default function ResearcherCreate() {
           <div style={styles.actions}>
             <button 
               type="button" 
-              style={styles.cancelBtn} 
+              style={{ ...styles.cancelBtn, opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }} 
               onClick={() => navigate('/dashboard/pesquisadores')}
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
-            <button type="submit" style={styles.saveBtn}>
-              Salvar
+            <button 
+              type="submit" 
+              style={{ ...styles.saveBtn, opacity: isSubmitting ? 0.7 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </form>
@@ -212,14 +249,15 @@ const styles = {
   form: { display: 'flex', flexDirection: 'column', gap: '20px' },
   inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px' },
   label: { fontSize: '16px', fontWeight: '600', color: '#1F1F1F', fontFamily: 'Inter, sans-serif' },
-  input: { height: '46px', padding: '0 14px', borderRadius: '5px', border: '1px solid #E5E7EB', fontSize: '15px', fontFamily: 'Open Sans, sans-serif', outline: 'none' },
+  input: { height: '46px', padding: '0 14px', borderRadius: '5px', border: '1px solid #E5E7EB', fontSize: '15px', fontFamily: 'Open Sans, sans-serif', outline: 'none', transition: '0.2s ease' },
   textarea: { padding: '12px 14px', borderRadius: '5px', border: '1px solid #E5E7EB', fontSize: '15px', fontFamily: 'Open Sans, sans-serif', outline: 'none', resize: 'vertical' },
   fileContainer: { display: 'flex', alignItems: 'center', border: '1px solid #E5E7EB', borderRadius: '5px', overflow: 'hidden', height: '46px', backgroundColor: '#FFFFFF' },
   fileInput: { display: 'none' },
-  fileBtn: { display: 'flex', alignItems: 'center', height: '100%', padding: '0 16px', backgroundColor: '#F3F4F6', borderRight: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px', color: '#1F1F1F', flexShrink: 0 },
+  fileBtn: { display: 'flex', alignItems: 'center', height: '100%', padding: '0 16px', backgroundColor: '#F3F4F6', borderRight: '1px solid #E5E7EB', cursor: 'pointer', fontSize: '14px', color: '#1F1F1F', flexShrink: 0, transition: '0.2s ease' },
   fileInstructions: { fontSize: '14px', paddingLeft: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 },
   actions: { display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' },
   cancelBtn: { backgroundColor: '#FFFFFF', color: '#1F1F1F', border: '1px solid #E5E7EB', borderRadius: '5px', padding: '12px 24px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: '0.2s ease' },
   saveBtn: { backgroundColor: 'rgb(43, 93, 250)', color: '#FFFFFF', border: 'none', borderRadius: '5px', padding: '12px 24px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', transition: '0.2s ease' },
-  errorText: { color: '#E57373', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' }
+  errorText: { color: '#E57373', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '500' },
+  globalError: { backgroundColor: '#FEE2E2', color: '#B91C1C', padding: '12px', borderRadius: '5px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }
 };
